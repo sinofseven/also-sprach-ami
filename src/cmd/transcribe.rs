@@ -123,7 +123,7 @@ impl CmdBase for Transcribe {
 }
 
 fn get_api_key() -> Result<String, String> {
-    let mut s = String::new();
+    let mut s;
     while {
         s = get_input("AmiVoice Cloud Platform API KEY: ")?;
 
@@ -134,7 +134,7 @@ fn get_api_key() -> Result<String, String> {
 }
 
 trait ArgMachesExt {
-    fn flag_of(& self, name: &str) -> bool;
+    fn flag_of(&self, name: &str) -> bool;
 }
 
 impl<'a> ArgMachesExt for ArgMatches<'a> {

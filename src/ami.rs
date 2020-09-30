@@ -1,13 +1,14 @@
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufReader, Read};
-use std::path::PathBuf;
 use std::thread::sleep;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tungstenite::{client::AutoStream, connect, Message, WebSocket, stream::Stream as StreamSwitcher, error::Error as WebSocketError};
+use tungstenite::{
+    client::AutoStream, connect, error::Error as WebSocketError, stream::Stream as StreamSwitcher,
+    Message, WebSocket,
+};
 use url::Url;
-use std::str::FromStr;
-use std::fmt::Display;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum OutputType {
@@ -102,18 +103,18 @@ impl Display for PacketData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             PacketData::SeSCommand(_) => "Send s Command",
-            PacketData::SePCommand    => "Send p Command",
-            PacketData::SeECommand    => "Send e Command",
+            PacketData::SePCommand => "Send p Command",
+            PacketData::SeECommand => "Send e Command",
             PacketData::ReSCommand(_) => "Recieve s Command Response",
             PacketData::RePCommand(_) => "Recieve p Command Response",
             PacketData::ReECommand(_) => "Recieve e Command Response",
-            PacketData::ReSEvent(_)   => "Recieve S Event",
-            PacketData::ReEEvent(_)   => "Recieve E Event",
-            PacketData::ReCEvent      => "Recieve C Event",
-            PacketData::ReUEvent(_)   => "Recieve U Event",
-            PacketData::ReAEvent(_)   => "Recieve A Event",
-            PacketData::ReGEvent(_)   => "Recieve G Event",
-            PacketData::Others        => "Other Data"
+            PacketData::ReSEvent(_) => "Recieve S Event",
+            PacketData::ReEEvent(_) => "Recieve E Event",
+            PacketData::ReCEvent => "Recieve C Event",
+            PacketData::ReUEvent(_) => "Recieve U Event",
+            PacketData::ReAEvent(_) => "Recieve A Event",
+            PacketData::ReGEvent(_) => "Recieve G Event",
+            PacketData::Others => "Other Data",
         };
         write!(f, "{}", s)
     }
@@ -226,7 +227,7 @@ pub struct AmiWebSocketClient {
     output_type: OutputType,
     socket: WebSocket<AutoStream>,
     is_end_initialize: bool,
-    is_json_output: bool
+    is_json_output: bool,
 }
 
 trait SendMessageExt<T> {
@@ -250,7 +251,7 @@ impl SendMessageExt<Vec<u8>> for AmiWebSocketClient {
         let message = Message::Binary(data);
 
         if self.get_packets()? {
-            return Ok(true)
+            return Ok(true);
         }
         self.socket
             .write_message(message)
@@ -270,7 +271,7 @@ impl SendMessageExt<Packet> for AmiWebSocketClient {
         }
 
         if self.get_packets()? {
-            return Ok(true)
+            return Ok(true);
         }
         self.socket
             .write_message(message)
@@ -290,6 +291,9 @@ impl AmiWebSocketClient {
         result_file_path: &str,
         output_type: OutputType,
     ) -> Result<AmiWebSocketClient, String> {
+        std::fs::write(&result_file_path, "")
+            .map_err(|e| format!("failed to write result file (empty write for check): {}", e))?;
+
         let reader = File::open(audio_file_path)
             .map(|f| BufReader::new(f))
             .map_err(|e| format!("failed to open file: {}", e))?;
@@ -300,13 +304,15 @@ impl AmiWebSocketClient {
         };
         let (mut socket, _) =
             connect(url).map_err(|e| format!("failed to connect by websocket: {}", e))?;
-        let mut stream = socket.get_mut();
-        let mut stream = match stream {
+        let stream = socket.get_mut();
+        let stream = match stream {
             StreamSwitcher::Plain(s) => s,
-            StreamSwitcher::Tls(s) => s.get_mut()
+            StreamSwitcher::Tls(s) => s.get_mut(),
         };
-        stream.set_nonblocking(true).map_err(|e| format!("failed to set non blocking: {}", e))?;
-        
+        stream
+            .set_nonblocking(true)
+            .map_err(|e| format!("failed to set non blocking: {}", e))?;
+
         Ok(AmiWebSocketClient {
             output_data: JsonOutput {
                 option: SCommandOption {
@@ -323,7 +329,7 @@ impl AmiWebSocketClient {
             result_file_path: result_file_path.to_string(),
             socket: socket,
             is_end_initialize: false,
-            is_json_output: is_json_output
+            is_json_output: is_json_output,
         })
     }
 
@@ -335,13 +341,15 @@ impl AmiWebSocketClient {
         }
 
         let text = if self.is_json_output {
-            serde_json::to_string_pretty(&self.output_data).map_err(|e| format!("failed to serialize result: {}", e))?
+            serde_json::to_string_pretty(&self.output_data)
+                .map_err(|e| format!("failed to serialize result: {}", e))?
         } else {
             self.output_data.lines.join("\n")
         };
 
-        std::fs::write(&self.result_file_path, text).map_err(|e| format!("failed to write result file: {}", e))?;
-        
+        std::fs::write(&self.result_file_path, text)
+            .map_err(|e| format!("failed to write result file: {}", e))?;
+
         self.socket
             .close(None)
             .map_err(|e| format!("failed to close websocket: {}", e))?;
@@ -381,12 +389,9 @@ impl AmiWebSocketClient {
     }
 
     fn send_audio(&mut self) -> Result<bool, String> {
-        let max_wait_time = 5000;
         let mut buf: [u8; 4096] = [0; 4096];
 
         loop {
-            let mut remain_wait_time = max_wait_time;
-
             let index = self
                 .audio_file_reader
                 .read(&mut buf)
@@ -417,19 +422,17 @@ impl AmiWebSocketClient {
     }
 
     fn get_packets(&mut self) -> Result<bool, String> {
-        while {
-            self.socket.can_read()
-        } {
+        while self.socket.can_read() {
             let msg = match self.socket.read_message() {
                 Ok(msg) => msg,
                 Err(e) => {
                     if let WebSocketError::Io(e) = e {
                         match e.kind() {
                             std::io::ErrorKind::WouldBlock => break,
-                            _ => return Err(format!("failed to read message: {}", e))
+                            _ => return Err(format!("failed to read message: {}", e)),
                         }
                     } else {
-                        return Err(format!("failed to read message: {}", e))
+                        return Err(format!("failed to read message: {}", e));
                     }
                 }
             };
