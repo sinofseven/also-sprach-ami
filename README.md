@@ -1,7 +1,7 @@
 also-sprach-ami
 ===
 
-AmiVoice Cloud Platformをかんたんに使うための非公式CLIツールです。
+日本語の音声認識で人気の[AmiVoice Cloud Platform](https://acp.amivoice.com/main/)をかんたんに使うための非公式CLIツールです。
 
 ドキュメントは気が向いたら整備します。
 
