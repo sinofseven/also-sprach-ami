@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["sinofseven <em.s.00001@gmail.com>"]
 edition = "2018"
 
-dependencies = "unofficial cli tool for AmiVoice Cloud Platform"
+description = "unofficial cli tool for AmiVoice Cloud Platform"
 repository = "https://github.com/sinofseven/also-sprach-ami"
 license = "MIT"
 readme = "README.md"
