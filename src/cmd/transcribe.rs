@@ -26,36 +26,43 @@ impl CmdBase for Transcribe {
                 Arg::with_name(ARG_AUDIO_FILE)
                     .long("audio-path")
                     .required(true)
-                    .takes_value(true),
+                    .takes_value(true)
+                    .help("target audio file path")
             )
             .arg(
                 Arg::with_name(ARG_OUTPUT_FILE)
                     .long("output-file")
                     .required(true)
                     .takes_value(true)
+                    .help("output file path")
             )
             .arg(
                 Arg::with_name(ARG_API_KEY)
                     .long("api-key")
-                    .takes_value(true),
+                    .takes_value(true)
+                    .help("AmiVoice Cloud Platform API KEY")
             )
             .arg(
                 Arg::with_name(ARG_AUDIO_FORMAT)
                     .long("audio-foramt")
                     .takes_value(true)
-                    .default_value("16k"),
+                    .default_value("16k")
+                    .help("audio file format")
+                    .help("audio file foramt. Details: https://acp.amivoice.com/main/manual/%e9%9f%b3%e5%a3%b0%e3%83%95%e3%82%a9%e3%83%bc%e3%83%9e%e3%83%83%e3%83%88%e3%81%ab%e3%81%a4%e3%81%84%e3%81%a6/")
             )
             .arg(
                 Arg::with_name(ARG_GRAMMAR_FILE_NAMES)
                     .long("grammar-file-names")
                     .takes_value(true)
-                    .default_value("-a-general"),
+                    .default_value("-a-general")
+                    .help("Types of Speech Recognition Engines")
             )
             .arg(
                 Arg::with_name(ARG_NO_LOG)
                     .long("no-log")
                     .takes_value(false)
-                    .multiple(true),
+                    .multiple(true)
+                    .help("flag of saving audio file and recognition result")
             )
             .arg(
                 Arg::with_name(ARG_VERBOSE)
@@ -75,6 +82,7 @@ impl CmdBase for Transcribe {
                     .long("is-json-output")
                     .takes_value(false)
                     .multiple(true)
+                    .help("flag of output json")
             )
     }
 
